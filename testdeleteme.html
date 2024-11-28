@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+	<style>
+			body {
+				background-color: rgba(0, 0, 0, 0);
+				font-family: 'Poppins', sans-serif;
+				color: white;
+				margin: 0;
+				padding: 0;
+				background-color: #000;
+			}
+			/* Container for the mask and leaderboard */
+			.mask-container {
+				width: 100%;
+				max-width: 640px;
+				margin: 0 auto;
+				padding: 20px;
+				box-sizing: border-box;
+				position: relative;
+			}
+			.leaderboard {
+				width: 100%;
+				margin: 0 auto;
+				height: auto;
+				padding: 10px; /* Added padding to push content inside */
+				background: linear-gradient(145deg, #000428, #004e92); /* Inspired by the neon purple tones */
+				border-radius: 10px;
+				position: relative;
+				box-sizing: border-box;
+				overflow: visible; /* Ensure the glowing border is not cut off */
+			}
+
+			/* Glowing border around the leaderboard */
+			.leaderboard:before, .leaderboard:after {
+				content: '';
+				position: absolute;
+				left: -5px; /* Increased for a thicker border */
+				top: -5px;  /* Increased for a thicker border */
+				background: linear-gradient(45deg, #36d1dc 0%, #3be8f5 100%); /* Light blue to sunset yellow gradient */
+				background-size: 200%;
+				width: calc(100% + 10px); /* Adjusted to fit thicker border */
+				height: calc(100% + 10px); /* Adjusted to fit thicker border */
+				z-index: -1;
+				animation: animatedBorder 5s ease infinite; /* Adjusted animation name */
+			}
+
+			@keyframes animatedBorder {
+				0% {
+					background-position: 0% 0%;
+				}
+				50% {
+					background-position: 100% 100%;
+				}
+				100% {
+					background-position: 0% 0%;
+				}
+			}
+
+			.leaderboard:after {
+				filter: blur(25px); /* Slight blur for glow effect */
+			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+				table-layout: fixed;
+				z-index: 1;
+				position: relative;
+			}
+			th, td {
+				padding: 12px;
+				word-wrap: break-word;
+				text-align: left;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+			}
+			th {
+				background-color: rgba(65, 30, 105, 0.85); /* Darker purples from the image */
+				font-size: 18px;
+				border-bottom: 3px solid #5b86e5; /* Neon pink accent line */
+			}
+			td {
+				background-color: transparent; /* Removing individual cell backgrounds */
+			}
+			
+			/* First place row */
+			tr.first-place {
+				background: linear-gradient(90deg, rgba(255, 154, 0, 0.85), rgba(255, 200, 87, 0.85)); /* Sunset orange to yellow */
+			}
+			
+			/* Second place row - darker, deeper orange-red */
+			tr.second-place {
+				background: linear-gradient(90deg, rgba(255, 94, 0, 0.85), rgba(180, 58, 30, 0.85)); /* Darker sunset tones */
+			}
+			
+			/* Third place row - transitioning to blue, like the ocean */
+			tr.third-place {
+				background: linear-gradient(90deg, rgba(0, 135, 255, 0.85), rgba(87, 193, 255, 0.85)); /* Ocean blue gradient */
+			}
+
+			/* Fourth place and beyond */
+			tr.fourth-place {
+				background: linear-gradient(90deg, rgba(65, 30, 105, 0.85), rgba(53, 19, 99, 0.85)); /* Purple gradient for 4th and beyond */
+			}
+			tr.fourth-place:nth-child(even) {
+				background: linear-gradient(90deg, rgba(53, 19, 99, 0.85), rgba(65, 30, 105, 0.85)); /* Alternating gradient for rows */
+			}
+
+			h1 {
+				text-align: center;
+				margin-bottom: 20px;
+				font-size: 32px;
+				color: #ffffff;
+				background: linear-gradient(145deg, #36d1dc, #3be8f5); /* Neon blue and pink gradient for title */
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				font-family: 'Poppins', sans-serif;
+			}
+			img {
+				max-width: 50px;
+				height: auto;
+				border-radius: 50%;
+				border: 2px solid #36d1dc; /* Neon pink border around images */
+			}
+			.rank-col {
+				width: 40px;
+				text-align: center;
+				padding-right: 30px;
+				font-weight: bold;
+			}
+			.username-col {
+				width: 60px;
+			}
+			.points-col {
+				width: 60px;
+				text-align: center;
+				font-weight: bold;
+			}
+			.user-container {
+				display: flex;
+				align-items: center;
+			}
+			.username {
+				text-align: left;
+				margin-left: 10px;
+				text-transform: capitalize;
+				font-weight: bold;
+			}
+			.username-header {
+				text-align: left;
+				padding-left: 30px;
+			}
+	</style>
+</head>
+<body>
+    <div class="mask-container">
+        <div class="leaderboard">
+            <h1>Snipes Win Leaderboard</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="rank-col">Rank</th>
+                        <th class="username-col username-header">Username</th>
+                        <th class="points-col">Points</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-data">
+                    <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Fetch leaderboard data from local JSON file
+        fetch('leaderboard.json')
+            .then(response => response.json())
+            .then(data => {
+                const leaderboard = data.leaderboard;
+                const leaderboardTable = document.getElementById('leaderboard-data');
+
+                let currentRank = 1;
+                leaderboard
+                    .filter(user => user.points > 0)  // Filter users with more than 0 points
+                    .sort((a, b) => b.points - a.points)  // Sort by points, descending
+                    .forEach((user, index, arr) => {
+                        // Check if the previous user's points are the same; if so, share the same rank
+                        if (index > 0 && user.points !== arr[index - 1].points) {
+                            currentRank = index + 1;
+                        }
+
+                        let rowClass = '';
+
+                        // Assign specific gradient for 1st, 2nd, 3rd, and 4th place and beyond
+                        if (currentRank === 1) {
+                            rowClass = 'first-place';  // First place
+                        } else if (currentRank === 2) {
+                            rowClass = 'second-place';  // Second place
+                        } else if (currentRank === 3) {
+                            rowClass = 'third-place';  // Third place
+                        } else {
+                            rowClass = 'fourth-place';  // Fourth place and beyond
+                        }
+
+                        const row = `
+                            <tr class="${rowClass}">
+                                <td class="rank-col">${currentRank}</td>
+                                <td class="username-col">
+                                    <div class="user-container">
+                                        <img class="profile-pic" src="${user.profile_image}" alt="${user.username}'s profile">
+                                        <span class="username">${user.username}</span>
+                                    </div>
+                                </td>
+                                <td class="points-col">${user.points}</td>
+                            </tr>`;
+                        
+                        leaderboardTable.innerHTML += row;
+                    });
+            })
+            .catch(error => console.error('Error loading leaderboard data:', error));
+    </script>
+</body>
+</html>
